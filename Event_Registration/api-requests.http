@@ -1,0 +1,78 @@
+### Install the "REST Client" extension in VS Code, then click "Send Request" above any request.
+### Start the server first:  npm run dev
+@baseUrl = http://localhost:5000
+
+### 1) Register an ORGANIZER (use the ORGANIZER_CODE from your .env)
+# @name registerOrganizer
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Olivia Organizer",
+  "email": "olivia@example.com",
+  "password": "password123",
+  "organizerCode": "change-me-organizer-code"
+}
+
+### 2) Register a normal USER
+# @name registerUser
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com",
+  "password": "password123"
+}
+
+### Save tokens (they are returned by the two requests above)
+@organizerToken = {{registerOrganizer.response.body.token}}
+@userToken = {{registerUser.response.body.token}}
+
+### 3) Create an event (organizer only). Change the date to a FUTURE date.
+# @name createEvent
+POST {{baseUrl}}/api/events
+Content-Type: application/json
+Authorization: Bearer {{organizerToken}}
+
+{
+  "title": "Node.js Workshop",
+  "description": "Hands-on backend workshop",
+  "location": "Karachi",
+  "eventDate": "2027-03-15T10:00:00Z",
+  "capacity": 30
+}
+
+@eventId = {{createEvent.response.body.id}}
+
+### 4) View all events / search / upcoming only
+GET {{baseUrl}}/api/events?upcoming=true&q=node
+
+### 5) Event details
+GET {{baseUrl}}/api/events/{{eventId}}
+
+### 6) Register for the event (logged-in user)
+# @name register
+POST {{baseUrl}}/api/events/{{eventId}}/register
+Content-Type: application/json
+Authorization: Bearer {{userToken}}
+
+{
+  "fullName": "Alice Khan",
+  "phone": "0300-1234567",
+  "notes": "Vegetarian meal please"
+}
+
+@registrationId = {{register.response.body.id}}
+
+### 7) My registrations
+GET {{baseUrl}}/api/registrations/my
+Authorization: Bearer {{userToken}}
+
+### 8) Cancel my registration
+DELETE {{baseUrl}}/api/registrations/{{registrationId}}
+Authorization: Bearer {{userToken}}
+
+### 9) Organizer: see attendees of my event
+GET {{baseUrl}}/api/events/{{eventId}}/registrations
+Authorization: Bearer {{organizerToken}}
